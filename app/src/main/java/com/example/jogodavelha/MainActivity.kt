@@ -27,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.jogodavelha.ui.theme.BLACK
@@ -51,7 +52,7 @@ fun JogoDaVelha() {
     var jogadorAtual by remember {
         mutableStateOf("X")
     }
-    val vencedor by remember {
+    var vencedor by remember {
         mutableStateOf<String?>(null)
     }
 
@@ -60,36 +61,60 @@ fun JogoDaVelha() {
             bloco = bloco.toMutableList().apply {
                 this[index] = jogadorAtual
             }
-            jogadorAtual = if (jogadorAtual == "X") "0" else "X"
+            jogadorAtual = if (jogadorAtual == "0") "X" else "0"
+            vencedor = verificaVencedor(bloco)
         }
-
     }
-    Column(
-        modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally
+
+    // O Box permite alinhar elementos em diferentes partes da tela (topo, centro, etc.)
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(WHITE)
     ) {
 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(10.dp),
+                .align(Alignment.TopCenter) // Alinha este Row no topo do Box
+                .padding(vertical = 40.dp), // Aumenta o espaçamento do topo
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val statusTexto = when (vencedor) {
+                "Empate" -> "Deu Empate!"
+                null -> "Jogador Atual: $jogadorAtual"
+                else -> "Vencedor: $vencedor"
+            }
+
             Text(
-                text = "Jogador:X",
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(bottom = 16.dp)
+                text = statusTexto,
+                style = MaterialTheme.typography.headlineLarge,
+                color = BLACK,
+                fontWeight = FontWeight.Bold
             )
+
             Icon(
                 imageVector = Icons.Rounded.Refresh,
-                contentDescription = null,
-                tint = BLACK,
-                modifier = Modifier.size(30.dp)
+                contentDescription = "Reiniciar Jogo",
+                tint = BLACK, // Cor do ícone
+                modifier = Modifier
+                    .size(40.dp)
+                    .clickable {
+                        bloco = List(9) { "" }
+                        jogadorAtual = "X"
+                        vencedor = null
+                    }
             )
         }
-        Grade(bloco = bloco, cliqueBloco = ::cliqueDoBloco)
-    }
 
+        Column(
+            modifier = Modifier.align(Alignment.Center), // Alinha este Column no centro do Box
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Grade(bloco = bloco, cliqueBloco = ::cliqueDoBloco)
+        }
+    }
 }
 
 @Composable
@@ -121,8 +146,34 @@ fun CriaQuadradoUI(
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
+        Text(
+            text = value, style = MaterialTheme.typography.headlineMedium,
+            color = BLACK,
+            fontWeight = FontWeight.ExtraBold,
+        )
 
     }
 }
+
+private fun verificaVencedor(bloco: List<String>): String? {
+    val combinacoesVencedoras = listOf(
+        // Linhas
+        listOf(0, 1, 2), listOf(3, 4, 5), listOf(6, 7, 8),
+        // Colunas
+        listOf(0, 3, 6), listOf(1, 4, 7), listOf(2, 5, 8),
+        // Diagonais
+        listOf(0, 4, 8), listOf(2, 4, 6)
+    )
+
+    for (combinacao in combinacoesVencedoras) {
+        val (a, b, c) = combinacao
+        if (bloco[a].isNotEmpty() && bloco[a] == bloco[b] && bloco[a] == bloco[c]) {
+            return bloco[a]
+        }
+    }
+
+    return if (bloco.all { it.isNotEmpty() }) "Empate" else null
+}
+
 
 
